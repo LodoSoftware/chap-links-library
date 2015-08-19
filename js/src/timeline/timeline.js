@@ -241,9 +241,9 @@ links.Timeline = function(container) {
     var dom = this.dom;
 
     // remove all elements from the container element.
-    while (dom.container.hasChildNodes()) {
-        dom.container.removeChild(dom.container.firstChild);
-    }
+    // while (dom.container.hasChildNodes()) {
+    //     dom.container.removeChild(dom.container.firstChild);
+    // }
 
     // create a step for drawing the axis
     this.step = new links.Timeline.StepDate();
