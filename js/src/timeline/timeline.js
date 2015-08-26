@@ -3378,8 +3378,6 @@ links.Timeline.prototype.animateTo = function(date) {
 
     var length = (this.end.valueOf() - this.start.valueOf());
     var newEnd = new Date(date.valueOf() + length);
-    // fire rangechanged event before animation
-    this.trigger("rangechanged", {'start':date, 'end':newEnd});
 
     var that = this;
 
@@ -3397,10 +3395,14 @@ links.Timeline.prototype.animateTo = function(date) {
             that.setVisibleChartRange(start, end);
 
             // start next timer
-            if (!that.atEnd || !that.atEnd) {
+            if (!that.atLeftEnd || !that.atRightEnd) {
                 that.animateTimeout = setTimeout(animate, 25);
                 that.trigger("rangechange");
             }
+        } else {
+            // fire rangechanged event before animation
+            that.trigger("rangechange");
+            that.trigger("rangechanged", {'start':date, 'end':newEnd});
         }
     };
     animate();
