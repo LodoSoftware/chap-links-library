@@ -2671,7 +2671,7 @@ links.Timeline.prototype.onTouchStart = function(event) {
     params.doubleTapItemPrev = params.doubleTapItem;
     params.doubleTapItem = item;
 
-    links.Timeline.preventDefault(event);
+    // links.Timeline.preventDefault(event);
 };
 
 /**
@@ -2708,7 +2708,7 @@ links.Timeline.prototype.onTouchMove = function(event) {
         }
     }
 
-    links.Timeline.preventDefault(event);
+    // links.Timeline.preventDefault(event);
 };
 
 /**
@@ -2748,7 +2748,7 @@ links.Timeline.prototype.onTouchEnd = function(event) {
         params.touchDown = false;
     }
 
-    links.Timeline.preventDefault(event);
+    // links.Timeline.preventDefault(event);
 };
 
 
@@ -3008,7 +3008,7 @@ links.Timeline.prototype.onMouseMove = function (event) {
         this.trigger('rangechange');
     }
 
-    links.Timeline.preventDefault(event);
+    // links.Timeline.preventDefault(event);
 };
 
 
