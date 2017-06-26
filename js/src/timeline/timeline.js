@@ -1742,7 +1742,9 @@ links.Timeline.prototype.repaintItems = function() {
         dom = this.dom,
         size = this.size,
         timeline = this,
-        renderedItems = this.renderedItems;
+        renderedItems = this.renderedItems,
+        start = this.start,
+        end = this.end;
 
     if (!dom.items) {
         dom.items = {};
@@ -1796,6 +1798,7 @@ links.Timeline.prototype.repaintItems = function() {
     // reposition all visible items
     renderedItems.forEach(function (item) {
         item.updatePosition(timeline);
+        item.updateAccessibility(timeline);
     });
 
     // make sure item is selected (this ensures that selected items without DOM are not shown as selected if DOM was added)
@@ -2395,6 +2398,8 @@ links.Timeline.prototype.repaintNavigation = function () {
                 navBar.moveLeftButton.id = "timelineLeftButton";
                 navBar.moveLeftButton.className = "timeline-navigation-move-left";
                 navBar.moveLeftButton.title = this.options.MOVE_LEFT;
+                navBar.moveLeftButton.tabIndex = 0;
+
                 var mlIconSpan = document.createElement("SPAN");
                 mlIconSpan.className = "ui-icon ui-icon-circle-arrow-w";
                 navBar.moveLeftButton.appendChild(mlIconSpan);
@@ -2411,7 +2416,17 @@ links.Timeline.prototype.repaintNavigation = function () {
                         timeline.trigger("rangechanged");
                     }
                 };
+
+                var onMoveLeftKeypress = function (event) {
+                    event.preventDefault();
+                    if (event.which === 13) {
+                        onMoveLeft(event);
+                    }
+                };
+
                 links.Timeline.addEventListener(navBar.moveLeftButton, "mousedown", onMoveLeft);
+                links.Timeline.addEventListener(navBar.moveLeftButton, "keypress", onMoveLeftKeypress);
+
                 navBar.appendChild(navBar.moveLeftButton);
 
                 if (options.todayButton) {
@@ -2419,6 +2434,8 @@ links.Timeline.prototype.repaintNavigation = function () {
                     navBar.todayButton = document.createElement("DIV");
                     navBar.todayButton.className = "timeline-navigation-move-today";
                     navBar.todayButton.title = this.options.MOVE_TODAY;
+                    navBar.todayButton.tabIndex = 0;
+
                     var mlIconSpan = document.createElement("SPAN");
                     mlIconSpan.innerHTML = "TODAY";
                     navBar.todayButton.appendChild(mlIconSpan);
@@ -2442,7 +2459,17 @@ links.Timeline.prototype.repaintNavigation = function () {
                             timeline.trigger("rangechanged");
                         }
                     };
+
+                    var onMoveTodayKeypress = function (event) {
+                        event.preventDefault();
+                        if (event.which === 13) {
+                            onMoveToday(event);
+                        }
+                    };
+
                     links.Timeline.addEventListener(navBar.todayButton, "mousedown", onMoveToday);
+                    links.Timeline.addEventListener(navBar.todayButton, "keypress", onMoveTodayKeypress);
+
                     navBar.appendChild(navBar.todayButton);
                 }
 
@@ -2451,6 +2478,8 @@ links.Timeline.prototype.repaintNavigation = function () {
                 navBar.moveRightButton.id = "timelineRightButton";
                 navBar.moveRightButton.className = "timeline-navigation-move-right";
                 navBar.moveRightButton.title = this.options.MOVE_RIGHT;
+                navBar.moveRightButton.tabIndex = 0;
+
                 var mrIconSpan = document.createElement("SPAN");
                 mrIconSpan.className = "ui-icon ui-icon-circle-arrow-e";
                 navBar.moveRightButton.appendChild(mrIconSpan);
@@ -2467,7 +2496,17 @@ links.Timeline.prototype.repaintNavigation = function () {
                         timeline.trigger("rangechanged");
                     }
                 };
+
+                var onMoveRightKeypress = function (event) {
+                    event.preventDefault();
+                    if (event.which === 13) {
+                        onMoveRight(event);
+                    }
+                };
+
                 links.Timeline.addEventListener(navBar.moveRightButton, "mousedown", onMoveRight);
+                links.Timeline.addEventListener(navBar.moveRightButton, "keypress", onMoveRightKeypress);
+
                 navBar.appendChild(navBar.moveRightButton);
             }
         }
@@ -3955,6 +3994,7 @@ links.Timeline.ItemBox.prototype.showDOM = function (container) {
         // Note: line must be added in front of the this,
         //       such that it stays below all this
         container.appendChild(dom.dot);
+
         this.rendered = true;
     }
 };
@@ -3976,6 +4016,7 @@ links.Timeline.ItemBox.prototype.hideDOM = function () {
         if (dom.dot && dom.dot.parentNode) {
             dom.dot.parentNode.removeChild(dom.dot);
         }
+
         this.rendered = false;
     }
 };
@@ -4013,6 +4054,42 @@ links.Timeline.ItemBox.prototype.updateDOM = function () {
         }
 
         // TODO: apply selected className?
+    }
+};
+
+/**
+ * Updates the tab index based on whether or not the item is visible in the timeline viewport.
+ * @param {links.Timeline} timeline
+ */
+links.Timeline.ItemBox.prototype.updateAccessibility = function (timeline) {
+    var dom = this.dom;
+    var start = timeline.start;
+    var end = timeline.end;
+    var isVisible = this.isVisible(start, end);
+
+    function onTimelineEventKeypress(event) {
+        event.preventDefault();
+        if (event.which === 13) {
+            var target = links.Timeline.getTarget(event);
+            timeline.eventParams.itemIndex = timeline.getItemIndex(target);
+            timeline.onMouseUp(event);
+        }
+    }
+
+    if (isVisible) {
+        dom.tabIndex = 0;
+
+        if (!this.hasKeypressListener) {
+            links.Timeline.addEventListener(dom, "keypress", onTimelineEventKeypress);
+            this.hasKeypressListener = true;
+        }
+    } else {
+        dom.tabIndex = -1;
+
+        if (this.hasKeypressListener) {
+            links.Timeline.removeEventListener(dom, "keypress", onTimelineEventKeypress);
+            this.hasKeypressListener = false;
+        }
     }
 };
 
@@ -5334,6 +5411,7 @@ links.Timeline.prototype.filterItems = function () {
         arr.forEach(function (item) {
             var rendered = item.rendered;
             var visible = item.isVisible(start, end);
+
             if (rendered != visible) {
                 if (rendered) {
                     queue.hide.push(item); // item is rendered but no longer visible
