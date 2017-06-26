@@ -1798,7 +1798,7 @@ links.Timeline.prototype.repaintItems = function() {
     // reposition all visible items
     renderedItems.forEach(function (item) {
         item.updatePosition(timeline);
-        item.updateAccessibility(start, end);
+        item.updateAccessibility(timeline);
     });
 
     // make sure item is selected (this ensures that selected items without DOM are not shown as selected if DOM was added)
@@ -4059,14 +4059,38 @@ links.Timeline.ItemBox.prototype.updateDOM = function () {
 
 /**
  * Updates the tab index based on whether or not the item is visible in the timeline viewport.
- * @param {Date} start
- * @param {Date} end
+ * @param {links.Timeline} timeline
  */
-links.Timeline.ItemBox.prototype.updateAccessibility = function (start, end) {
+links.Timeline.ItemBox.prototype.updateAccessibility = function (timeline) {
     var dom = this.dom;
+    var start = timeline.start;
+    var end = timeline.end;
     var isVisible = this.isVisible(start, end);
 
-    dom.tabIndex = isVisible ? 0 : -1;
+    function onTimelineEventKeypress(event) {
+        event.preventDefault();
+        if (event.which === 13) {
+            var target = links.Timeline.getTarget(event);
+            timeline.eventParams.itemIndex = timeline.getItemIndex(target);
+            timeline.onMouseUp(event);
+        }
+    }
+
+    if (isVisible) {
+        dom.tabIndex = 0;
+
+        if (!this.hasKeypressListener) {
+            links.Timeline.addEventListener(dom, "keypress", onTimelineEventKeypress);
+            this.hasKeypressListener = true;
+        }
+    } else {
+        dom.tabIndex = -1;
+
+        if (this.hasKeypressListener) {
+            links.Timeline.removeEventListener(dom, "keypress", onTimelineEventKeypress);
+            this.hasKeypressListener = false;
+        }
+    }
 };
 
 /**
